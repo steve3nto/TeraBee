@@ -64,11 +64,11 @@ void draw() {
     
     // Map values to MIDI notes of major scale!
     int[] midi = new int[5];
-    for(int i = 0; i < 2; i++)
+    for(int i = 0; i < 5; i++)
     {
       //midi[i] = (sensor[i]-40)*(8-1)/(400-40) + 1;
       if (sensor[i] < 30) {
-            midi[i] = 1;
+            midi[i] = 0;
         } else if (sensor[i] >= 30 && sensor[i] < 90) {
             midi[i] = 60;
         } else if (sensor[i] >= 90 && sensor[i] < 140) {
@@ -91,7 +91,7 @@ void draw() {
     //myMessage.add(mouseY/(float)height);
     myMessage.add((float)midi[0]);
     myMessage.add((float)midi[1]);
-    myMessage.add((float)midi[2]);
+    myMessage.add((float)sensor[2]);
     myMessage.add((float)midi[3]);
     myMessage.add((float)midi[4]);
     oscP5.send(myMessage, myRemoteLocation); 

@@ -62,29 +62,28 @@ void draw() {
       drawGradient(x, y, sensor[i]);
     } 
     
-    // Map sensor values to MIDI notes!
+    // Map values to MIDI notes of major scale!
     int[] midi = new int[5];
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < 2; i++)
     {
       //midi[i] = (sensor[i]-40)*(8-1)/(400-40) + 1;
-      if (sensor[0] < 30) {
+      if (sensor[i] < 30) {
             midi[i] = 1;
-        } else if (sensor[0] >= 30 && sensor[0] < 90) {
+        } else if (sensor[i] >= 30 && sensor[i] < 90) {
             midi[i] = 60;
-        } else if (sensor[0] >= 90 && sensor[0] < 140) {
+        } else if (sensor[i] >= 90 && sensor[i] < 140) {
             midi[i] = 62;
-        } else if (sensor[0] >= 140 && sensor[0] < 180) {
+        } else if (sensor[i] >= 140 && sensor[i] < 180) {
             midi[i] = 64;
-        } else if (sensor[0] >= 180 && sensor[0] < 220) {
+        } else if (sensor[i] >= 180 && sensor[i] < 220) {
             midi[i] = 65;
-        } else if (sensor[0] >= 220 && sensor[0] < 275) {
+        } else if (sensor[i] >= 220 && sensor[i] < 260) {
             midi[i] = 67;
-        } else if (sensor[0] >= 275 && sensor[0] < 323) {
+        } else if (sensor[i] >= 260 && sensor[i] < 300) {
             midi[i] = 69;    
         } else {
             midi[i] = 71;
         }
-      
     }
         
     OscMessage myMessage = new OscMessage("/SC/inputs");

@@ -1,5 +1,5 @@
 
-NetAddr("127.0.0.1",57121);
+NetAddr("10.79.9.169",57121);
 thisProcess.openUDPPort(57121);
 
 
@@ -41,7 +41,7 @@ OSCdef('OSCreceiver',
 	{
 		arg msg;
 
-		var freq = 5*(msg[1]+msg[2]+msg[3]+20);
+		var freq = midicps(msg[1]);
 		//var cutoff = 100*(msg[4]+msg[5]+20);
 
 		synth1.set(\freq,freq,\t_trig,1);

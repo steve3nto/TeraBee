@@ -6,10 +6,17 @@ import netP5.*;
 OscP5 oscP5;
 NetAddress myRemoteLocation;
 
-Serial myPort;  // The serial port
+// Set sketch parameters
 int dim = width;
 int w_canvas = 1200;
 int h_canvas = 800;
+int num_sensors = 5;  //number of terabee sensors
+
+Random rand = new Random();
+Serial myPort;  // The serial port
+
+int[] S = new int[num_sensors];
+int[] midi = new int[num_sensors];
 
 void setup() {
   // Serial data setup
@@ -40,46 +47,35 @@ void draw() {
     
     //int foo = Integer.parseInt(parts[0]);
     
-    int S1, S2, S3, S4, S5;
-    
-    S1 = Integer.parseInt(parts[1]);
-    S2 = Integer.parseInt(parts[2]);
-    S3 = Integer.parseInt(parts[3]);
-    S4 = Integer.parseInt(parts[4]);
-    S5 = Integer.parseInt(parts[5]);
-    
-    //println(S1, S2, S3, S4, S5);
-    int[] sensor = new int[]{S1, S2, S3, S4, S5};
-      
-    // define random position generator
-    Random rand = new Random();
+    for(int i=0; i<num_sensors; i++) {
+      S[i] = Integer.parseInt(parts[i+1]);
+    }
        
     // Draw something
     background(0);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < num_sensors; i++) {
       int x = rand.nextInt(w_canvas - 30) + 30;
       int y = rand.nextInt(h_canvas - 30) + 30;
-      drawGradient(x, y, sensor[i]);
+      drawGradient(x, y, S[i]);
     } 
     
     // Map values to MIDI notes of major scale!
-    int[] midi = new int[5];
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < num_sensors; i++)
     {
       //midi[i] = (sensor[i]-40)*(8-1)/(400-40) + 1;
-      if (sensor[i] < 30) {
+      if (S[i] < 30) {
             midi[i] = 0;
-        } else if (sensor[i] >= 30 && sensor[i] < 90) {
+        } else if (S[i] >= 30 && S[i] < 90) {
             midi[i] = 60;
-        } else if (sensor[i] >= 90 && sensor[i] < 140) {
+        } else if (S[i] >= 90 && S[i] < 140) {
             midi[i] = 62;
-        } else if (sensor[i] >= 140 && sensor[i] < 180) {
+        } else if (S[i] >= 140 && S[i] < 180) {
             midi[i] = 64;
-        } else if (sensor[i] >= 180 && sensor[i] < 220) {
+        } else if (S[i] >= 180 && S[i] < 220) {
             midi[i] = 65;
-        } else if (sensor[i] >= 220 && sensor[i] < 260) {
+        } else if (S[i] >= 220 && S[i] < 260) {
             midi[i] = 67;
-        } else if (sensor[i] >= 260 && sensor[i] < 300) {
+        } else if (S[i] >= 260 && S[i] < 300) {
             midi[i] = 69;    
         } else {
             midi[i] = 71;
@@ -91,7 +87,7 @@ void draw() {
     //myMessage.add(mouseY/(float)height);
     myMessage.add((float)midi[0]);
     myMessage.add((float)midi[1]);
-    myMessage.add((float)sensor[2]);
+    myMessage.add((float)S[2]);
     myMessage.add((float)midi[3]);
     myMessage.add((float)midi[4]);
     oscP5.send(myMessage, myRemoteLocation); 

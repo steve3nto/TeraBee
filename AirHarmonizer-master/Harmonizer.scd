@@ -1,10 +1,5 @@
-// Settings per cambiare input audio
-
-//Server.local.options.inDevice = "MME : Cuffie (Audio Bluetooth)";
-//Server.local.options.outDevice = " MME : Cuffie (Audio Bluetooth)";
-Server.local.options.inDevice = "[Scarlett 2i2 USB]";
-Server.local.options.outDevice = "[Scarlett 2i2 USB]";
-ServerOptions.outDevices
+Server.local.options.device = "ASIO : Focusrite USB 2.0 Audio Driver";
+s.boot;
 
 // Player
 (
@@ -22,13 +17,13 @@ ServerOptions.outDevices
 		var out_signal;
 
 		// fai QUESTO se vuoi usare il file vocals (cambialo a seconda del tuo path assoluto
-		//var infile="/Users/Clara/Desktop/AirHarmonizer/vocals.wav";
-		//var b = Buffer.read(s, infile);
-		//var input=PlayBuf.ar(2,b.bufnum,BufRateScale.kr(b.bufnum),loop:1);
+		var infile= "C:/Users/Stefano/Desktop/TeraBee/AirHarmonizer-master/vocals.wav";
+		var b = Buffer.read(s, infile);
+		var input=PlayBuf.ar(2,b.bufnum,BufRateScale.kr(b.bufnum),loop:1);
 
 		// decommenta questo se vuoi invece l'input del microfono
 		//var input=AudioIn.ar([1,2]);
-		var input=AudioIn.ar(1);
+		//var input=AudioIn.ar(1);
 
 
 		//var o1=PitchShift.ar(input,windowSize:wS,pitchRatio:p1);
@@ -66,7 +61,7 @@ ServerOptions.outDevices
 NetAddr("127.0.0.1",57120);
 
 (
-var song, freq, loud,pan;
+var song, freq, loud, pan;
 
 
 a = Synth(\harm);

@@ -3,7 +3,7 @@
 #include <EEPROM.h>
 
 // address for Terabee laser sensor connnected via USB
-#define ADDRESS 0x55
+#define ADDRESS 0x55   
 #define ELEMENTS(x)   (sizeof(x) / sizeof(x[0]))   // to count elements in an array
 
 const int num_sensors = 3;
@@ -19,30 +19,39 @@ typedef struct {    // holds all free parameters (for presets)
   int max_value[num_sensors];
 } parameters;
 
-parameters params;  // struct that holds all present parameters
-
 // Created and binds the MIDI interface to the default hardware Serial port
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 // variables to read midi input
 byte type, d1, d2;
 
-// Function prototypes
-void sendMIDIcc(int control_num = 22);
-void sendRubberBand(int control_num = 22);
+// struct that holds all current parameters
+parameters params;  
 
 // constants won't change. They're used here to set pin numbers:
 const int buttonPin1 = 4;     // button for standby
 const int buttonPin2 = 5;     // button for elastic-mode
-const int ledPin1 =  6;       // elastic-mode LED (green)
+const int ledPin1 =  6;       // rubber band mode LED (green)
 const int ledPin2 =  7;       // standby LED (red)
+const int buttonPin3 = 9;
+const int buttonPin4 = 10;
+const int buttonPin5 = 11;  // the buttons for the 3 presets / sensor activation
 
 int buttonState1 = HIGH;         // current state of the button (LOW = ON)
 int lastButtonState1 = HIGH;     // previous state of the button
 int buttonState2 = HIGH;        
-int lastButtonState2 = HIGH;    
+int lastButtonState2 = HIGH;
+int buttonState3 = HIGH;        
+int lastButtonState3 = HIGH;
+int buttonState4 = HIGH;        
+int lastButtonState4 = HIGH;
+int buttonState5 = HIGH;        
+int lastButtonState5 = HIGH;          
 int waitState = HIGH;
 int rubberState = HIGH;
+int presetState1 = HIGH;
+int presetState2 = HIGH;
+int presetState3 = HIGH;
 
 // the following variables are unsigned longs because the time, measured in
 // milliseconds, will quickly become a bigger number than can be stored in an int.
@@ -50,6 +59,17 @@ unsigned long lastDebounceTime1 = 0;  // the last time the output pin was toggle
 unsigned long debounceDelay1 = 50;    // the debounce time; increase if the output flickers
 unsigned long lastDebounceTime2 = 0;
 unsigned long debounceDelay2 = 50;
+unsigned long lastDebounceTime3 = 0;
+unsigned long debounceDelay3 = 50;
+unsigned long lastDebounceTime4 = 0;
+unsigned long debounceDelay4 = 50;
+unsigned long lastDebounceTime5 = 0;
+unsigned long debounceDelay5 = 50;
+
+// Hold time
+unsigned long holdTime = 500;
+unsigned long holdStart;
+bool holdPressed = false;
 
 // define array to read message
 int msg[2*num_sensors];         // array size must be = num_sensors*2
@@ -57,6 +77,13 @@ int data[num_sensors];        // array size must be = num_sensors
 int prev_value[num_sensors];  // array size must be = num_sensors
 int value;
 bool first_time[num_sensors];  // array size must be = num_sensors
+
+// Define rubber-band defaults for the 3 sensors
+int default_value[] = {63, 63, 63};
+
+// define upper limit for each sensor (how far shall the hand go?)
+int sensor_range[] = {200, 200, 200};
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -69,21 +96,23 @@ void setup() {
   pinMode(ledPin1, OUTPUT);
   pinMode(ledPin2, OUTPUT);
   // initialize the pushbuttons as inputs:
-  pinMode(buttonPin1, INPUT);
-  pinMode(buttonPin2, INPUT);
+  pinMode(buttonPin1, INPUT_PULLUP);
+  pinMode(buttonPin2, INPUT_PULLUP);
+  pinMode(buttonPin3, INPUT_PULLUP);
+  pinMode(buttonPin4, INPUT_PULLUP);
+  pinMode(buttonPin5, INPUT_PULLUP);
 
-  rubberState = HIGH;  // HIGH voltage means the LED is OFF
-  waitState = HIGH;
   digitalWrite(ledPin1, rubberState);
   digitalWrite(ledPin2, waitState);
  
   // initialize first_time and reverse flags
-  for(int i=0; i<num_sensors; i++)
+  for(int i=0; i<3; i++)
   {
       first_time[i] = true;
   }
-  
-  initialise_preset2();  // initial parameters are hard-coded in the function definition
+
+  // Choose preset 1, 2 or 3 by changing the function name
+  initialise_preset1();  // initial parameters are hard-coded in the function definition
   delay(3000);
 
 }
@@ -92,60 +121,37 @@ void loop() {
   // Logic for the button presses
   //##########################################################
 
+  // Check if HOLD MODE gets activated
+  ButtonHold(buttonPin1, ledPin2, holdStart, holdTime, holdPressed);
+  
   // read the state of the pushbutton value:
   int reading1 = digitalRead(buttonPin1);
   int reading2 = digitalRead(buttonPin2);
+  int reading3 = digitalRead(buttonPin3);
+  int reading4 = digitalRead(buttonPin4);
+  int reading5 = digitalRead(buttonPin5); 
 
-  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  if (reading1 != lastButtonState1) {
-    lastDebounceTime1 = millis();
-  }
+  // WAIT BUTTON
+  buttonPress(reading1, lastButtonState1, waitState, ledPin2,
+                buttonState1, lastDebounceTime1, debounceDelay1);
+  
+  // RUBBER BAND BUTTON
+  buttonPress(reading2, lastButtonState2,rubberState, ledPin1,
+                buttonState2, lastDebounceTime2, debounceDelay2);
+  
+  // PRESET BUTTON 1
+  buttonPress(reading3, lastButtonState3, presetState1, ledPin2,
+                buttonState3, lastDebounceTime3, debounceDelay3);
 
-  if((millis() - lastDebounceTime1) > debounceDelay1) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
+  // PRESET BUTTON 2
+  buttonPress(reading4, lastButtonState4, presetState2, ledPin2,
+                buttonState4, lastDebounceTime4, debounceDelay4);
 
-    // if the button state has changed:
-    if (reading1 != buttonState1) {
-      buttonState1 = reading1;
+  // PRESET BUTTON 3
+  buttonPress(reading5, lastButtonState5, presetState3, ledPin2,
+                buttonState5, lastDebounceTime5, debounceDelay5);
 
-      // only toggle the LED if the new button state is HIGH (press and release)
-      if (buttonState1 == HIGH) {
-        rubberState = !rubberState;
-      }
-    }    
-    
-  }  
-  // set the LED:
-  digitalWrite(ledPin1, rubberState);
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
-  lastButtonState1 = reading1;
-
-// check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  if (reading2 != lastButtonState2) {
-    lastDebounceTime2 = millis();
-  }
-
-  if((millis() - lastDebounceTime2) > debounceDelay2) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-
-    // if the button state has changed:
-    if (reading2 != buttonState2) {
-      buttonState2 = reading2;
-
-      // only toggle the LED if the new button state is HIGH
-      if (buttonState2 == HIGH) {
-        waitState = !waitState;
-      }
-    }    
-    
-  }  
-  // set the LED:
-  digitalWrite(ledPin2, waitState);
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
-  lastButtonState2 = reading2;  
-
+  
   //#############################################################################//
   // MAIN CODE for each state (wait, rubber, normal mode)
   
@@ -169,7 +175,7 @@ void loop() {
     }
   }
   
-  // Convert 2 bytes message to single int value
+  // Convert 2 bytes to single message 
   int j = 0;
   for(int i=0; i < num_sensors*2; i += 2)
   {
@@ -177,14 +183,14 @@ void loop() {
     j += 1;
   }
   
-  if(rubberState == LOW) // if Rubber mode is ON
+
+  if(rubberState == LOW)
   {
     sendRubberBand();
     mergeMIDI();          
     return;  
   }
-
-  // normal mode
+  
   sendMIDIcc();
   mergeMIDI();
   
@@ -216,7 +222,7 @@ void mergeMIDI()   // listens to any MIDI in and sends it through
     }  
 }
 
-void sendMIDIcc(int control_num)
+void sendMIDIcc()
 {
   for(int i=0; i < num_sensors; i++)  // loop over sensors
   {
@@ -249,7 +255,7 @@ void sendMIDIcc(int control_num)
   } 
 }
 
-void sendRubberBand(int control_num)
+void sendRubberBand()
 {
   for(int i=0; i < num_sensors; i++)  // loop over sensors
   {
@@ -279,6 +285,62 @@ void sendRubberBand(int control_num)
           }
       } 
   }
+}
+
+
+void buttonPress(int& reading, int& lastButtonState, int& state, int ledPin,
+       int& buttonState,unsigned long& lastDebounceTime, unsigned long& debounceDelay)
+{
+  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  if((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer than the debounce
+    // delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+
+      // only toggle the LED if the new button state is HIGH (press and release)
+      if (buttonState == HIGH) {
+        state = !state;
+      }
+    }    
+    
+  }  
+  // set the LED:
+  digitalWrite(ledPin, state);
+  // save the reading. Next time through the loop, it'll be the lastButtonState:
+  lastButtonState = reading;  
+}
+
+void ButtonHold(int buttonPin, int ledPin, unsigned long& holdStart, 
+        unsigned long& holdTime, bool& holdPressed)
+{
+  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
+  if (!holdPressed && digitalRead(buttonPin) == LOW) {    
+    holdStart = millis();
+    holdPressed = true;
+  }
+  
+  if((millis() - holdStart) > holdTime && holdPressed) {  // button has been held 
+    holdMode(ledPin, buttonPin);  
+  }
+}
+
+void holdMode(int ledPin, int buttonPin)
+{
+    while(digitalRead(buttonPin) == LOW)
+    {
+      digitalWrite(ledPin, !holdMode);
+      delay(1000);
+      digitalWrite(ledPin, holdMode);    
+      delay(1000);
+    }  
+    holdPressed = false;
 }
 
 void initialise_preset1() {

@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <EEPROM.h>
 
-// address for Terabee laser sensor connnected via USB
+// address for Terabee laser sensor (serial communication)
 #define ADDRESS 0x55   
 #define ELEMENTS(x)   (sizeof(x) / sizeof(x[0]))   // to count elements in an array
 
@@ -10,6 +10,7 @@ const int num_sensors = 3;
 
 typedef struct {    // holds all free parameters (for presets)
   bool reverse[num_sensors];
+  bool switchMode[num_sensors];
   int activePreset;
   int waitState; 
   int rubberState; 
@@ -290,8 +291,32 @@ void sendMIDIcc()
       {
         continue;  
       }
-      
-      if(data[i] != -256)  // -256 is infinite distance from sensor (no object detected)
+
+      if(params.switchMode[i])    // switch mode behaves differently
+      {
+        if(data[i] != -256)   {
+              if(params.reverse[i]) {
+                value = params.min_value[i] ;  
+              } 
+              else {
+                value = params.max_value[i] ;  
+              }             
+        }
+        else   {
+              if(params.reverse[i]) {
+                value = params.max_value[i] ;
+              } 
+              else {
+                value = params.min_value[i] ;
+              }             
+        }
+        
+        if(value != prev_value[i]) {
+              MIDI.sendControlChange(params.cc_num[i], value, 1);
+              prev_value[i] = value;          
+          }   
+      }      
+      else if(data[i] != -256)  // -256 is infinite distance from sensor (no object detected)
       {
           // map data to MIDI CC range [0,127]
           if(params.reverse[i])
@@ -325,16 +350,26 @@ void sendRubberBand()
   for(int i=0; i < num_sensors; i++)  // loop over sensors
   {
       
-      if(params.activeState[i] == HIGH)  // low means active
+      if(params.activeState[i] == HIGH)  // HIGH means OFF
       {
         continue;  
       }
+
       
       if(data[i] != -256)  // -256 is infinite distance from sensor (no hand detected)
       {
           // map data to MIDI CC range [0,127]
-          value = map(constrain(data[i], 40, params.sensor_range[i]), 
-                    40, params.sensor_range[i], params.max_value[i], params.min_value[i]);
+          if(params.reverse[i])
+          {
+            value = map(constrain(data[i], 40, params.sensor_range[i]), 
+                  40, params.sensor_range[i], params.min_value[i], params.max_value[i]);   
+          }
+          else
+          {
+            value = map(constrain(data[i], 40, params.sensor_range[i]), 
+                  40, params.sensor_range[i], params.max_value[i], params.min_value[i]);    
+          }
+          
           if(first_time[i])  {
               MIDI.sendControlChange(params.cc_num[i], value, 1);
               prev_value[i] = value;
@@ -437,6 +472,7 @@ void holdMode(int ledPin, int buttonPin)
 void initialise_preset1() {
     params.cc_num[0] = 22;  params.cc_num[1] = 23; params.cc_num[2] = 24;
     params.reverse[0] = false; params.reverse[1] = false; params.reverse[2] = false;
+    params.switchMode[0] = false;  params.switchMode[1] = false;   params.switchMode[2] = false;
     params.activeState[0] = LOW; params.activeState[1] = LOW; params.activeState[2] = LOW;
     // (min, max) = (40, 150) sensor range due to terabee sensor characteristics
     params.sensor_range[0] = 150; params.sensor_range[1] = 150; params.sensor_range[2] = 150; 
@@ -450,20 +486,22 @@ void initialise_preset1() {
 
 void initialise_preset2() {
     params.cc_num[0] = 22;  params.cc_num[1] = 23; params.cc_num[2] = 24;
-    params.reverse[0] = false; params.reverse[1] = true; params.reverse[2] = true;
+    params.reverse[0] = true; params.reverse[1] = true; params.reverse[2] = true;
+    params.switchMode[0] = true;  params.switchMode[1] = true;   params.switchMode[2] = false;
     params.activeState[0] = LOW; params.activeState[1] = LOW; params.activeState[2] = LOW;
     params.sensor_range[0] = 50; params.sensor_range[1] = 150; params.sensor_range[2] = 100; 
     params.default_value[0] = 30; params.default_value[1] = 90; params.default_value[2] = 30;  
-    params.min_value[0] = 0; params.min_value[1] = 50; params.min_value[2] = 90;
-    params.max_value[0] = 127; params.max_value[1] = 100; params.max_value[2] = 127;
+    params.min_value[0] = 0; params.min_value[1] = 0; params.min_value[2] = 80;
+    params.max_value[0] = 127; params.max_value[1] = 127; params.max_value[2] = 127;
     params.activePreset = 2;
     params.presetState[0] = HIGH; params.presetState[1] = LOW; params.presetState[2] = HIGH;
 }
 
 void initialise_preset3() {
-    params.cc_num[0] = 22;  params.cc_num[1] = 23; params.cc_num[2] = 24;
+    params.cc_num[0] = 26;  params.cc_num[1] = 24; params.cc_num[2] = 23;
     params.reverse[0] = false; params.reverse[1] = false; params.reverse[2] = false;
-    params.activeState[0] = HIGH; params.activeState[1] = HIGH; params.activeState[2] = LOW;
+    params.switchMode[0] = false;  params.switchMode[1] = false;   params.switchMode[2] = false;
+    params.activeState[0] = LOW; params.activeState[1] = LOW; params.activeState[2] = LOW;
     params.sensor_range[0] = 150; params.sensor_range[1] = 150; params.sensor_range[2] = 150; 
     params.default_value[0] = 64; params.default_value[1] = 64; params.default_value[2] = 64;  
     params.min_value[0] = 0; params.min_value[1] = 0; params.min_value[2] = 0;

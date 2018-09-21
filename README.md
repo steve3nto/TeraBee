@@ -1,3 +1,3 @@
 # TeraBee 
-TeraRanger Multiflex Project - 
-Developed during the Hackathon of Creative Programming course, 2018 (PoliMi)
+Applications of Teraranger Multiflex sensors for computer music and music interaction. 
+Developed at Politecnico di Milano during the MSc in music and acoustic engineering.

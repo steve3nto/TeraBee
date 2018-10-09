@@ -35,15 +35,15 @@ parameters_t params;
 
 // constants won't change. They're used here to set pin numbers:
 const int buttonPin1 = 4;     // button for standby
-const int buttonPin2 = 5;     // button for elastic-mode
-const int buttonPin3 = 8;
-const int buttonPin4 = 9;
-const int buttonPin5 = 10;  // the buttons for the 3 presets / sensor activation
+const int buttonPin2 = 10;     // button for elastic-mode
+const int buttonPin3 = 9;
+const int buttonPin4 = 8;
+const int buttonPin5 = 5;  // the buttons for the 3 presets / sensor activation
 const int ledPin1 =  6;       // rubber band mode LED (green)
-const int ledPin2 =  7;       // standby LED (red)
-const int ledPin3 =  11;       
-const int ledPin4 =  12;       
-const int ledPin5 =  13;
+const int ledPin2 =  13;       // standby LED (red)
+const int ledPin3 =  12;       
+const int ledPin4 =  11;       
+const int ledPin5 =  7;
 
 int buttonState1 = HIGH;         // current state of the button (LOW = ON)
 int lastButtonState1 = HIGH;     // previous state of the button

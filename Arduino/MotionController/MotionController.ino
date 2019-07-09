@@ -280,6 +280,13 @@ void mergeMIDI()   // listens to any MIDI in and sends it through
         d1 = MIDI.getData1();
         d2 = MIDI.getData2();
         MIDI.send(type,d1,d2,1);
+//        digitalWrite(ledPin4, LOW);
+//        delay(300);   
+//        digitalWrite(ledPin4, HIGH);
+//        delay(300);   
+//        digitalWrite(ledPin4, LOW);
+//        delay(300);    
+//        digitalWrite(ledPin4, HIGH);
     }  
 }
 

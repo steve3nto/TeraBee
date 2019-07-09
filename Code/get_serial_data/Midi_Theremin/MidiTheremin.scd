@@ -1,3 +1,5 @@
+Server.local.options.device = "ASIO : Focusrite USB 2.0 Audio Driver";
+s.boot;
 
 NetAddr("127.0.0.1",57121);
 thisProcess.openUDPPort(57121);
@@ -92,7 +94,6 @@ moog = Synth(\moog);
 moog2 = Synth(\moog);
 moog3 = Synth(\moog);
 
-
 OSCdef('OSCreceiver',
 	{
 		arg msg;
@@ -101,15 +102,15 @@ OSCdef('OSCreceiver',
 		var freq_hi = midicps(msg[1]);
 
 		moog.set(\freq, freq_chord);
-		moog.set(\amp, 0.5);
+		moog.set(\amp, 0.3);
 
 
 		moog2.set(\freq, midicps(msg[5]+4));
-		moog2.set(\amp, 0.5);
+		moog2.set(\amp, 0.3);
 
 
 		moog3.set(\freq, midicps(msg[5]+7));
-		moog3.set(\amp, 0.5);
+		moog3.set(\amp, 0.3);
 
 
 		wobble.set(\freq,freq_hi,\t_trig,1);
